@@ -1,0 +1,6 @@
+matplotlib>3.0.0
+numpy>1.16.0
+tensorflow>2.0
+networkx==2.4
+spektral==0.2.0
+torch>=1.4.0
