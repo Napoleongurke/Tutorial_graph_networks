@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.sparse as sp
+from tensorflow import keras
 
 
 def encode_onehot(labels):
@@ -7,6 +8,15 @@ def encode_onehot(labels):
     classes_dict = {c: np.identity(len(classes))[i, :] for i, c in enumerate(classes)}
     labels_onehot = np.array(list(map(classes_dict.get, labels)), dtype=np.int32)
     return labels_onehot
+
+
+def deflected_cosmic_rays():
+    file = np.load("/net/scratch/deeplearning/cosmic_ray_sphere/dataset_HAP.npz")
+    x_train, x_test = file['data'][:-10000], file['data'][-10000:]
+    labels = keras.utils.to_categorical(file['label'], num_classes=2)
+    y_train, y_test = labels[:-10000], labels[-10000:]
+
+    return x_train, x_test, y_train, y_test
 
 
 def karate_club(edge_path="./", label_path=None):
