@@ -1,52 +1,47 @@
-import time
+import tensorflow as tf
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-from tensorflow import keras
-from tensorflow.keras.layers import Input, Dropout
+from tensorflow.keras.layers import Input
 from tensorflow.keras.models import Model
-from tensorflow.keras.optimizers import Adam, SGD
-import spektral
+from tensorflow.keras.optimizers import Adam
+from data import loading
 from spektral.layers import GraphConv
+import utils
 
-g = nx.read_graphml('data/karate.graphml')
+K = tf.keras.backend
 
+features, adj, edges, labels_one_hot = loading.karate_club(edge_path="/home/GandalfDerWeisse/tutorial_graph_networks/data/edges.txt", label_path="/home/GandalfDerWeisse/tutorial_graph_networks/data/labels.txt")
 
-def plot_graph(g, name=""):
-    f, axes = plt.subplots(1)
-    nx.draw(
-        g,
-        cmap=plt.get_cmap('jet'),
-        node_color=np.log(list(nx.get_node_attributes(g, 'membership').values())))
-    f.savefig("inital_graph.png")
+g = nx.from_numpy_matrix(adj)
+
+# plot graph
+fig, axes = plt.subplots(1)
+nx.draw(
+    g,
+    cmap=plt.get_cmap('jet'),
+    node_color=np.log(utils.one_hot_to_labels(labels_one_hot)),
+    layout="random_layout")
+fig.savefig("./initial_graph.png")
 
 
 adj = nx.adj_matrix(g).toarray()
-X = np.ones(shape=adj.shape[0])[..., np.newaxis]
-X=features
-# x = np.diagonal(spektral.utils.degree(adj))[..., np.newaxis]
-
-# Semi-supervised
-memberships = [m - 1 for m in nx.get_node_attributes(g, 'membership').values()]
-nb_classes = len(set(memberships))
-labels = keras.utils.to_categorical(memberships, nb_classes)
-
-# X = np.array(memberships) # WARNING THIS IS STUPID _ ONLY FOR BUG FIXING
+X = np.identity(34)  #
 
 # Pick one at random from each class
-labels_to_keep = np.array([np.random.choice(np.nonzero(labels[:, c])[0]) for c in range(nb_classes)])
-train_mask = np.zeros(shape=labels.shape[0], dtype=np.bool)
+labels_to_keep = np.array([np.random.choice(np.nonzero(labels_one_hot[:, c])[0]) for c in range(4)])
+train_mask = np.zeros(shape=labels_one_hot.shape[0], dtype=np.bool)
 train_mask[labels_to_keep] = ~train_mask[labels_to_keep]
 val_mask = ~train_mask
 
-y_train = labels * train_mask[..., np.newaxis]
-y_val = labels * val_mask[..., np.newaxis]
+y_train = labels_one_hot * train_mask[..., np.newaxis]
+y_val = labels_one_hot * val_mask[..., np.newaxis]
 
 # Get important parameters of adjacency matrix
 N = adj.shape[0]
 F = 16
-learning_rate = 1e-2
-epochs = 20000
+learning_rate = 0.01
+epochs = 300
 
 # Preprocessing operations
 fltr = GraphConv.preprocess(adj).astype('f4')
@@ -54,93 +49,49 @@ fltr = GraphConv.preprocess(adj).astype('f4')
 # Model definition
 X_in = Input(shape=(N,))
 fltr_in = Input(shape=(N,))
-dropout_1 = Dropout(0.5)(X_in)
-graph_conv_1 = GraphConv(4, activation='tanh', use_bias=False)([dropout_1, fltr_in])
-dropout_2 = Dropout(0.5)(graph_conv_1)
-graph_conv_4 = GraphConv(4, activation='tanh', use_bias=False)([dropout_2, fltr_in])
-output = GraphConv(nb_classes, activation='softmax', use_bias=False)([graph_conv_4, fltr_in])
+x = GraphConv(F, activation='tanh', use_bias=False)([X_in, fltr_in])
+x = GraphConv(F, activation='tanh', use_bias=False)([x, fltr_in])
+x = GraphConv(2, activation='tanh', use_bias=False, name="embedding")([x, fltr_in])
+output = GraphConv(4, activation='softmax', use_bias=False)([x, fltr_in])
 
 # Build model
 model = Model(inputs=[X_in, fltr_in], outputs=output)
-optimizer = Adam(lr=learning_rate)
-model.compile(optimizer=optimizer,
+model.compile(optimizer=Adam(lr=learning_rate),
               loss='categorical_crossentropy',
               weighted_metrics=['acc'])
 model.summary()
 
-# Train model
-# fltr = fltr.toarray()
-validation_data = ([X, fltr], labels, val_mask)
-model.fit([X, fltr],
-          labels,
-          epochs=epochs,
-          sample_weight=train_mask,
-          batch_size=N,
-          validation_data=validation_data,
-          shuffle=False,  # Shuffling data means shuffling the whole graph
-          )
+embeddings = {}
+for i in range(epochs):
+    log = model.train_on_batch([X, fltr],
+                               labels_one_hot,
+                               sample_weight=train_mask,
+                               )
+    if i % 10 == 0:
+        print("iteration:", i, "loss:", log[0], "accuracy:", log[1])
 
-# Evaluate model
-print('Evaluating model.')
-eval_results = model.evaluate([X, fltr],
-                              labels,
-                              sample_weight=val_mask,
-                              batch_size=N)
-print('Done.\n'
-      'Test loss: {}\n'
-      'Test accuracy: {}'.format(*eval_results))
+    if i % 50 == 0:
+        val_log = model.test_on_batch([X, fltr], labels_one_hot, sample_weight=val_mask)
+        print("iteration:", i, "val_loss:", val_log[0], "val_accuracy:", val_log[1])
+
+        emb = model.get_layer("embedding").get_output_at(0)
+        functor = K.function([X_in, fltr_in], emb)
+        embeddings[i] = functor([X, fltr])
 
 
-epochs = 600
-save_every = 100
+fig, axes = plt.subplots(nrows=2, ncols=3, sharey=True, sharex=True, figsize=(16, 10))
+axes = axes.flatten()
+keys = list(embeddings.keys())
+keys.sort()
 
-t = time.time()
-outputs = {}
-# Train model
-for epoch in range(epochs):
-    # Construct feed dictionary
-
-    # Training step
-    _, train_loss, train_acc = sess.run(
-        (opt_op, loss, accuracy), feed_dict=feed_dict_train)
-
-    if epoch % save_every == 0:
-        # Validation
-        val_loss, val_acc = sess.run((loss, accuracy), feed_dict=feed_dict_val)
-
-        # Print results
-        print("Epoch:", '%04d' % (epoch + 1),
-              "train_loss=", "{:.5f}".format(train_loss),
-              "train_acc=", "{:.5f}".format(train_acc),
-              "val_loss=", "{:.5f}".format(val_loss),
-              "val_acc=", "{:.5f}".format(val_acc),
-              "time=", "{:.5f}".format(time.time() - t))
-
-        feed_dict_output = {ph['adj_norm']: adj_norm_tuple,
-                            ph['x']: feat_x_tuple}
-
-        output = sess.run(o_fc3, feed_dict=feed_dict_output)
-        outputs[epoch] = output
-
-node_positions = {o: {n: tuple(outputs[o][j])
-                      for j, n in enumerate(nx.nodes(g))}
-                  for o in outputs}
-plot_titles = {o: 'epoch {o}'.format(o=o) for o in outputs}
-
-# Two subplots, unpack the axes array immediately
-f, axes = plt.subplots(nrows=2, ncols=3, sharey=True, sharex=True, figsize=(16, 10))
-
-e = list(node_positions.keys())
-
-for i, ax in enumerate(axes.flat):
-    pos = node_positions[e[i]]
-    ax.set_title(plot_titles[e[i]])
-
+for i, k_epoch in enumerate(keys):
+    axes[i].set_title("iterations %i" % k_epoch)
     nx.draw(
         g,
         cmap=plt.get_cmap('jet'),
-        node_color=np.log(
-            list(nx.get_node_attributes(g, 'membership').values())),
-        pos=pos, ax=ax)
+        node_color=np.log(np.sum([(labels_one_hot[:, j] == 1) * (j + 1) for j in range(4)], axis=0)),
+        pos=embeddings[k_epoch], ax=axes[i])
+    axes[i].set_xlabel("embedding x")
+    axes[i].set_ylabel("embedding y")
 
-f.savefig("karathe_graph_final.png")
+fig.savefig("./after_training.png")

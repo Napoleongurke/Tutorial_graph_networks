@@ -9,7 +9,7 @@ def encode_onehot(labels):
     return labels_onehot
 
 
-def load_data(edge_path="./", label_path=None):
+def karate_club(edge_path="./", label_path=None):
     """Load karate club dataset
     returns: features, adj, edges, labels
     """
