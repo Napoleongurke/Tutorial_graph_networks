@@ -65,7 +65,7 @@ model.compile(loss="binary_crossentropy",
 
 model.fit(train_input_data,
           y_train,
-          epochs=10)
+          epochs=3)
 
 
 # Draw Graph in each EdgeConv layer
