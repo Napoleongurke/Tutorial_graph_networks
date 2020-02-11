@@ -22,7 +22,10 @@ def get_edge_graph_in_model(input_data, model, sample_idx=0):
         coordinates = model.get_layer(lay_name).get_input_at(0)
         functor = K.function([points_in, feats_in], coordinates)
         sample_input = [inp[np.newaxis, sample_idx] for inp in input_data]
-        layer_points, layer_features = functor(sample_input)
+        try:
+            layer_points, layer_features = functor(sample_input)
+        except ValueError:
+            layer_points = functor(sample_input)
         layer_points = np.squeeze(layer_points)
         adj = kneighbors_graph(layer_points, model.get_layer(lay_name).K)
         g = nx.from_scipy_sparse_matrix(adj)
@@ -50,7 +53,7 @@ def draw_signal_contribution(model, test_input_data, test_id=0):
     assert True in coord_mask, "For plotting the spherical graph of the cosmic ray on at least one input has to have 3 dimensions XYZ"
 
     emb = model.get_layer("embedding").get_output_at(0)
-    functor = K.function([points_input, feats_input], emb)
+    functor = K.function(model.inputs, emb)
     test_sample_points = [arr[np.newaxis, test_id] for arr in test_input_data]
     F = functor(test_sample_points).squeeze()  # output of last conv layer
     W, b = model.get_layer("classification").get_weights()  # weights of final dense layer

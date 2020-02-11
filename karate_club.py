@@ -1,3 +1,4 @@
+#!/usr/bin/env pygpu
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import networkx as nx
