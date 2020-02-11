@@ -11,7 +11,8 @@ import utils
 
 K = tf.keras.backend
 
-features, adj, edges, labels_one_hot = loading.karate_club(edge_path="/home/GandalfDerWeisse/tutorial_graph_networks/data/edges.txt", label_path="/home/GandalfDerWeisse/tutorial_graph_networks/data/labels.txt")
+features, adj, edges, labels_one_hot = loading.karate_club()
+
 
 g = nx.from_numpy_matrix(adj)
 
@@ -22,11 +23,11 @@ nx.draw(
     cmap=plt.get_cmap('jet'),
     node_color=np.log(utils.one_hot_to_labels(labels_one_hot)),
     layout="random_layout")
-fig.savefig("./initial_graph.png")
+fig.savefig("./initial_graph_spring.png")
 
 
 adj = nx.adj_matrix(g).toarray()
-X = np.identity(34)  #
+X = np.identity(34)
 
 # Pick one at random from each class
 labels_to_keep = np.array([np.random.choice(np.nonzero(labels_one_hot[:, c])[0]) for c in range(4)])

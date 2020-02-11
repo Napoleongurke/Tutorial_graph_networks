@@ -19,7 +19,7 @@ def deflected_cosmic_rays():
     return x_train, x_test, y_train, y_test
 
 
-def karate_club(edge_path="./", label_path=None):
+def karate_club(edge_path="/net/scratch/JGlombitza/edges.txt", label_path="/net/scratch/JGlombitza/labels.txt"):
     """Load karate club dataset
     returns: features, adj, edges, labels
     """
