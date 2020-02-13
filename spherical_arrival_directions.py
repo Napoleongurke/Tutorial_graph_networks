@@ -46,9 +46,9 @@ def kernel_nn(data, nodes=16):
 points_input = layers.Input((500, 3))
 feats_input = layers.Input((500, 1))
 
-x = EdgeConv(lambda a: kernel_nn(a, nodes=8), next_neighbors=6)([points_input, feats_input])
+x = EdgeConv(lambda a: kernel_nn(a, nodes=8), next_neighbors=5)([points_input, feats_input])
 x = layers.Activation("relu")(x)
-x = EdgeConv(lambda a: kernel_nn(a, nodes=16), next_neighbors=10)(x)
+x = EdgeConv(lambda a: kernel_nn(a, nodes=16), next_neighbors=8)(x)
 x = layers.Activation("relu")(x)
 y = EdgeConv(lambda a: kernel_nn(a, nodes=32), next_neighbors=16)(x)
 x = layers.Activation("relu")(y)
@@ -59,7 +59,7 @@ model = keras.models.Model([points_input, feats_input], out)
 model.summary()
 
 model.compile(loss="binary_crossentropy",
-              optimizer=keras.optimizers.Adam(1E-3, decay=1E-4),
+              optimizer=keras.optimizers.Adam(3E-3, decay=1E-4),
               metrics=['acc'])
 
 model.fit(train_input_data,

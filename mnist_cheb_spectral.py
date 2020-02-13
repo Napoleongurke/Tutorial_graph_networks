@@ -14,37 +14,42 @@ from data import loading
 import numpy as np
 
 # Load data
-X_train, y_train, X_val, y_val, X_test, y_test, A, pos = loading.mnist_regular_graph(k=8)
+X_train, y_train, X_val, y_val, X_test, y_test, A, pos = loading.mnist_regular_graph(k=8)  # k=number of next neighbors
 
-g = nx.from_numpy_matrix(A)
-
+# plot example of single graph sample
 fig, ax = plt.subplots(1, figsize=(9,9))
 ax.axis('equal')
+
+g = nx.from_numpy_matrix(A)
 nx.draw(
     g,
     cmap=plt.get_cmap('jet'),
     pos=pos,
     node_size=100,
-    node_color=X_train[0].squeeze(),
+    node_color=X_train[0].squeeze(),  # set node color ~ to pixel intensity
     width=2,
     )
 
 fig.tight_layout()
 fig.savefig("./mnist_graph.png")
 
+
 # Parameters
 channels = 16           # Number of channels in the first layer
 cheb_k = 2              # Max degree of the Chebyshev approximation
 support = cheb_k + 1    # Total number of filters (k + 1)
-N_samples = X_train.shape[0]  # Number of samples in the training dataset
-test_samples = X_test.shape[0]
-N_nodes = X_train.shape[-2]   # Number of nodes in the graph
-learning_rate = 1e-2    # Learning rate for SGD
+learning_rate = 1e-2
 epochs = 2              #  Number of training epochs
 batch_size = 32
 
+N_samples = X_train.shape[0]  # Number of samples in the training dataset
+test_samples = X_test.shape[0]
+N_nodes = X_train.shape[-2]   # Number of nodes in the graph
+
+
 # Preprocessing operations
-fltr = chebyshev_filter(A, cheb_k)
+fltr = chebyshev_filter(A, cheb_k) # normalaize adjacency matrix
+
 
 # Model definition
 X_in = layers.Input(shape=(N_nodes, 1))
@@ -70,11 +75,11 @@ model.compile(optimizer=optimizer,
 model.summary()
 
 
-progbar = tensorflow.keras.utils.Progbar(N_samples, verbose=1)  # create fancy keras progressbar
 A_train = [np.repeat(f[np.newaxis,...], batch_size, axis=0) for f in fltr]  # create batch of adjacency matrices as ht graph is constant for all samples!
 
-# Train model
+print('Train model.') # Train model
 for epoch in range(epochs):
+    progbar = tensorflow.keras.utils.Progbar(N_samples, verbose=1)  # create fancy keras progressbar
     for i in range(N_samples // batch_size):
         beg = i*batch_size
         end = (i+1) * batch_size
@@ -82,9 +87,8 @@ for epoch in range(epochs):
         progbar.add(batch_size, values=[("train loss", loss), ("acc", acc)])  # update fancy keras progress bar
 
 
-# Evaluate model
+print('Evaluating model.')  # Evaluate model
 progbar = tensorflow.keras.utils.Progbar(test_samples, verbose=1)  # create fancy keras progressbar
-print('Evaluating model.')
 for a in range(test_samples // batch_size):
     beg = a*batch_size
     end = (a+1) * batch_size
