@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.sparse as sp
 from tensorflow import keras
+from spektral.datasets import mnist
 
 
 def encode_onehot(labels):
@@ -10,7 +11,34 @@ def encode_onehot(labels):
     return labels_onehot
 
 
+def mnist_regular_graph(k=8):
+    ''' load mnist dataset as graph. The graph is created using knn.
+        You can change the number of neighbors per node by changing k.
+        params:
+            k: number of neighbors per node
+        returns:
+            X_train, y_train, X_val, y_val, X_test, y_test, A, node_positions
+    '''
+    X_train, y_train, X_val, y_val, X_test, y_test, A = mnist.load_data()
+    X_train = X_train[..., np.newaxis]
+    X_test = X_test[..., np.newaxis]
+    y_train = keras.utils.to_categorical(y_train, 10)
+    y_test = keras.utils.to_categorical(y_test, 10)
+
+    n_x, n_y = (28, 28)
+    x = np.linspace(0, 10, n_x)
+    y = np.linspace(0, 10, n_y)
+    y = np.flip(y)
+    xv, yv = np.meshgrid(x, y)
+    pos = np.stack([xv.flatten(), yv.flatten()], axis=-1)
+    return X_train, y_train, X_val, y_val, X_test, y_test, A.toarray(), pos
+
+
 def deflected_cosmic_rays():
+    ''' load dataset of deflected cosmic rays.
+        returns:
+            x_train, x_test, y_train, y_test
+    '''
     file = np.load("/net/scratch/deeplearning/cosmic_ray_sphere/dataset_HAP.npz")
     x_train, x_test = file['data'][:-10000], file['data'][-10000:]
     labels = keras.utils.to_categorical(file['label'], num_classes=2)
@@ -20,8 +48,8 @@ def deflected_cosmic_rays():
 
 
 def karate_club(edge_path="/net/scratch/JGlombitza/edges.txt", label_path="/net/scratch/JGlombitza/labels.txt"):
-    """Load karate club dataset
-    returns: features, adj, edges, labels
+    """ load karate club dataset
+        returns: features, A, edges, labels
     """
 
     print('Loading karate club dataset...')
@@ -47,6 +75,10 @@ def karate_club(edge_path="/net/scratch/JGlombitza/edges.txt", label_path="/net/
 
 
 def make_mnist_super_data(path=""):
+    ''' Create mnist mnist_superpixel dataset
+        returns:
+            features, A, edges, pos, labels
+    '''
     import torch
     features, edge_index, edge_slice, pos, labels = torch.load(path)
     features, edge_index, edge_slice, pos, labels = np.array(features), np.array(edge_index), np.array(edge_slice), np.array(pos), np.array(labels)
