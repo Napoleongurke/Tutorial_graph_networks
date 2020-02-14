@@ -71,7 +71,7 @@ def karate_club(edge_path="/net/scratch/JGlombitza/edges.txt", label_path="/net/
         return features.toarray(), adj.toarray(), edges, labels
     else:
         print('Dataset has {} nodes, {} edges, {} features.'.format(adj.shape[0], edges.shape[0], features.shape[1]))
-        return features.toarray(), adj.toarray(), edges
+        return features.toarray(), np.sign(adj.toarray()), edges
 
 
 def make_mnist_super_data(path=""):

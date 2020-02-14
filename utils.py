@@ -47,6 +47,26 @@ def get_edge_graph_in_model(input_data, model, sample_idx=0):
     return fig
 
 
+def plot_eigenvectors(A):
+    from scipy.sparse.linalg import eigsh # assumes L to be symmetricΛ,V = eigsh(L,k=20,which=’SM’) # eigen-decomposition (i.e. find Λ,V)
+    # adapted from https://towardsdatascience.com/spectral-graph-convolution-explained-and-implemented-step-by-step-2e495b57f801
+    N = A.shape[0] # number of nodes in a graph
+    D = np.sum(A, 0) # node degrees
+    D_hat = np.diag((D + 1e-5)**(-0.5)) # normalized node degrees
+    L = np.identity(N) - np.dot(D_hat, A).dot(D_hat) # Laplacian
+    _,V = eigsh(L,k=20,which='SM') # eigen-decomposition (i.e. find lambda,eigenvectors)
+    Vs = [np.split(V, 20, axis=-1)][0]
+    nrows = 4
+    fig, axes = plt.subplots(nrows= nrows, ncols=int(np.ceil(len(Vs)/nrows)), figsize=(16,9))
+    axes = axes.flatten()
+    for i, eigen in enumerate(Vs):
+        axes[i].imshow(eigen.reshape(28,28))
+        axes[i].axis('equal')
+
+    fig.tight_layout()
+    return fig
+
+
 def draw_signal_contribution(model, test_input_data, test_id=0):
     # Draw Signal Contribution
     coord_mask = [np.sum(np.linalg.norm(inp_d[test_id], axis=-1)) == 500 for inp_d in test_input_data]

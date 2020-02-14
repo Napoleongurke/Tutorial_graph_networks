@@ -5,12 +5,13 @@ Convolutional Neural Networks on Graphs with Fast Localized Spectral Filtering (
 Michaël Defferrard, Xavier Bresson, Pierre Vandergheynst
 """
 import tensorflow
+from tensorflow.keras import models, layers, optimizers
 from matplotlib import pyplot as plt
 import networkx as nx
-from tensorflow.keras import models, layers, optimizers
 from spektral.layers import ChebConv
 from spektral.utils.convolution import chebyshev_filter
 from data import loading
+import utils
 import numpy as np
 
 # Load data
@@ -33,6 +34,8 @@ nx.draw(
 fig.tight_layout()
 fig.savefig("./mnist_graph.png")
 
+utils.plot_eigenvectors(A)
+fig.savefig("./mnist_eigen.png")
 
 # Parameters
 channels = 16           # Number of channels in the first layer
