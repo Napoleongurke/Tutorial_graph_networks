@@ -1,9 +1,4 @@
-"""
-This example implements the experiments on citation networks using convolutional
-layers from the paper:
-Convolutional Neural Networks on Graphs with Fast Localized Spectral Filtering (https://arxiv.org/abs/1606.09375)
-Michaël Defferrard, Xavier Bresson, Pierre Vandergheynst
-"""
+#!/usr/bin/env pygpu
 import tensorflow
 from tensorflow.keras import models, layers, optimizers
 from matplotlib import pyplot as plt
