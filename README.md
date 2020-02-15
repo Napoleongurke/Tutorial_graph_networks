@@ -1,6 +1,5 @@
 # Tutorial_graph_networks
 
-# GAN Tutorial
 Train different types of Graph Convolutional Netowks using [TensorFlow](https://www.tensorflow.org/), [Keras](https://keras.io/), [Spektral](https://spektral.graphneural.network/) and an own implementation of [EdgeConvolutions](https://arxiv.org/abs/1801.07829)
 Provided Examples:
 - Semi-supervised classification of the "Karate Club" network
