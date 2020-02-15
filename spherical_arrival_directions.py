@@ -27,7 +27,8 @@ skymap.eventmap(example_map[:, 0:3].T, c=example_map[:, 3], cblabel="Energy (nor
 
 # build kernel network
 def kernel_nn(data, nodes=16):
-    d1, d2 = data
+    d1, d2 = data  # get xi ("central" pixel) and xj ("neighborhood" pixels)
+
     dif = layers.Subtract()([d1, d2])
     x = layers.Concatenate(axis=-1)([d1, dif])
 
@@ -46,11 +47,11 @@ def kernel_nn(data, nodes=16):
 points_input = layers.Input((500, 3))
 feats_input = layers.Input((500, 1))
 
-x = EdgeConv(lambda a: kernel_nn(a, nodes=8), next_neighbors=5)([points_input, feats_input])
+x = EdgeConv(lambda a: kernel_nn(a, nodes=8), next_neighbors=5)([points_input, feats_input])  # conv with fixed graph
 x = layers.Activation("relu")(x)
-x = EdgeConv(lambda a: kernel_nn(a, nodes=16), next_neighbors=8)(x)
+x = EdgeConv(lambda a: kernel_nn(a, nodes=16), next_neighbors=8)([points_input, x])  # conv with fixed graph
 x = layers.Activation("relu")(x)
-y = EdgeConv(lambda a: kernel_nn(a, nodes=32), next_neighbors=16)(x)
+y = EdgeConv(lambda a: kernel_nn(a, nodes=32), next_neighbors=16)([points_input, x])  # conv with fixed graph
 x = layers.Activation("relu")(y)
 x = layers.GlobalAveragePooling1D(data_format='channels_first', name="embedding")(x)
 out = layers.Dense(2, name="classification", activation="softmax")(x)
@@ -62,9 +63,13 @@ model.compile(loss="binary_crossentropy",
               optimizer=keras.optimizers.Adam(3E-3, decay=1E-4),
               metrics=['acc'])
 
-model.fit(train_input_data,
+history = model.fit(train_input_data,
           y_train,
           epochs=2)
+
+
+fig = utils.plot_history(history.history)
+fig.savefig("./history_sphere.png")
 
 
 # Draw Graph in each EdgeConv layerser

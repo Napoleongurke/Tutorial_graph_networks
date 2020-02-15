@@ -19,7 +19,7 @@ def mnist_regular_graph(k=8):
         returns:
             X_train, y_train, X_val, y_val, X_test, y_test, A, node_positions
     '''
-    X_train, y_train, X_val, y_val, X_test, y_test, A = mnist.load_data()
+    X_train, y_train, X_val, y_val, X_test, y_test, A = mnist.load_data(k)
     X_train = X_train[..., np.newaxis]
     X_test = X_test[..., np.newaxis]
     y_train = keras.utils.to_categorical(y_train, 10)

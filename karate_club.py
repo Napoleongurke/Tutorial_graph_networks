@@ -24,7 +24,7 @@ nx.draw(
     cmap=plt.get_cmap('jet'),
     node_color=np.log(utils.one_hot_to_labels(labels_one_hot)),
     layout="random_layout")
-fig.savefig("./initial_graph_spring.png")
+fig.savefig("./initial_graph.png")
 
 
 adj = nx.adj_matrix(g).toarray()
@@ -41,7 +41,7 @@ y_val = labels_one_hot * val_mask[..., np.newaxis]
 
 # Get important parameters of adjacency matrix
 N = adj.shape[0]
-F = 16
+F = 4  # number of features
 learning_rate = 0.01
 epochs = 300
 
@@ -64,21 +64,28 @@ model.compile(optimizer=Adam(lr=learning_rate),
 model.summary()
 
 embeddings = {}
+history = []
+
 for i in range(epochs):
-    log = model.train_on_batch([X, fltr],
+    loss, acc = model.train_on_batch([X, fltr],
                                labels_one_hot,
                                sample_weight=train_mask,
                                )
+
     if i % 10 == 0:
-        print("iteration:", i, "loss:", log[0], "accuracy:", log[1])
+        print("iteration:", i, "loss:", loss, "accuracy:", acc)
+        val_loss, val_acc = model.test_on_batch([X, fltr], labels_one_hot, sample_weight=val_mask)
+        print("iteration:", i, "val_loss:", val_loss, "val_accuracy:", val_acc)
+        history.append([val_loss, val_acc])
 
     if i % 50 == 0:
-        val_log = model.test_on_batch([X, fltr], labels_one_hot, sample_weight=val_mask)
-        print("iteration:", i, "val_loss:", val_log[0], "val_accuracy:", val_log[1])
-
         emb = model.get_layer("embedding").get_output_at(0)
         functor = K.function([X_in, fltr_in], emb)
         embeddings[i] = functor([X, fltr])
+
+
+fig = utils.plot_history(history)
+fig.savefig("./history_karate.png")
 
 
 fig, axes = plt.subplots(nrows=2, ncols=3, sharey=True, sharex=True, figsize=(16, 10))
@@ -87,11 +94,12 @@ keys = list(embeddings.keys())
 keys.sort()
 
 for i, k_epoch in enumerate(keys):
-    axes[i].set_title("iterations %i" % k_epoch)
+    axes[i].set_title("iteration %i" % k_epoch)
     nx.draw(
         g,
         cmap=plt.get_cmap('jet'),
         node_color=np.log(np.sum([(labels_one_hot[:, j] == 1) * (j + 1) for j in range(4)], axis=0)),
+        alpha=0.5,
         pos=embeddings[k_epoch], ax=axes[i])
     axes[i].set_xlabel("embedding x")
     axes[i].set_ylabel("embedding y")

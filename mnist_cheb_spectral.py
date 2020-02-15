@@ -27,14 +27,15 @@ nx.draw(
     cmap=plt.get_cmap('jet'),
     pos=pos,
     node_size=100,
-    node_color=X_train[0].squeeze(),  # set node color ~ to pixel intensity
+    node_color=X_train[5].squeeze(),  # set node color ~ to pixel intensity
     width=2,
     )
 
 fig.tight_layout()
 fig.savefig("./mnist_graph.png")
 
-utils.plot_eigenvectors(A)
+# plot first 20 eigenvectors of graph / most important eigenvectors in fourierdomain
+fig = utils.plot_eigenvectors(A)
 fig.savefig("./mnist_eigen.png")
 
 # Parameters
@@ -42,8 +43,8 @@ channels = 16           # Number of channels in the first layer
 cheb_k = 2              # Max degree of the Chebyshev approximation
 support = cheb_k + 1    # Total number of filters (k + 1)
 learning_rate = 1e-2
-epochs = 2              #  Number of training epochs
-batch_size = 32
+epochs = 2
+batch_size = 64
 
 N_samples = X_train.shape[0]  # Number of samples in the training dataset
 test_samples = X_test.shape[0]
@@ -80,19 +81,31 @@ model.summary()
 
 A_train = [np.repeat(f[np.newaxis,...], batch_size, axis=0) for f in fltr]  # create batch of adjacency matrices as ht graph is constant for all samples!
 
-print('Train model.') # Train model
+print('Train model.\n') # Train model
+history = []
 for epoch in range(epochs):
+
+    print("epoch", epoch, "\n")
     progbar = tensorflow.keras.utils.Progbar(N_samples, verbose=1)  # create fancy keras progressbar
     for i in range(N_samples // batch_size):
+
         beg = i*batch_size
         end = (i+1) * batch_size
         loss, acc = model.train_on_batch([X_train[beg:end]] + A_train, y_train[beg:end])
         progbar.add(batch_size, values=[("train loss", loss), ("acc", acc)])  # update fancy keras progress bar
 
+        history.append([loss, acc])
 
-print('Evaluating model.')  # Evaluate model
+
+fig = utils.plot_history(history)
+fig.savefig("./history_mnist.png")
+
+
+print('Evaluating model.\n')  # Evaluate model
+
 progbar = tensorflow.keras.utils.Progbar(test_samples, verbose=1)  # create fancy keras progressbar
 for a in range(test_samples // batch_size):
+
     beg = a*batch_size
     end = (a+1) * batch_size
     eval_loss, eval_acc = model.test_on_batch([X_test[beg:end]] + A_train, y_test[beg:end])

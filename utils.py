@@ -66,6 +66,28 @@ def plot_eigenvectors(A):
     fig.tight_layout()
     return fig
 
+def plot_history(history):
+    fig, axes = plt.subplots(2, figsize=(12,8))
+    if type(history) == dict:
+        loss = history["loss"]
+        acc = history["acc"]
+    else:
+        loss, acc = np.split(np.array(history), 2, axis=-1)
+    x = np.arange(len(loss))
+    axes[0].plot(x, loss, c="navy")
+    axes[0].set_yscale("log")
+    axes[0].set_ylabel("Loss")
+    axes[1].plot(x, acc, c="firebrick")
+    axes[1].set_ylabel("Accuracy")
+    axes[1].set_ylim(0, 1)
+    if type(history) == dict:
+        axes[0].set_xlabel("Epochs")
+        axes[1].set_xlabel("Epochs")
+    else:
+        axes[0].set_xlabel("Iterations")
+        axes[1].set_xlabel("Iterations")
+    fig.tight_layout()
+    return fig
 
 def draw_signal_contribution(model, test_input_data, test_id=0):
     # Draw Signal Contribution
