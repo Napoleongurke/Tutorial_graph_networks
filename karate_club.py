@@ -72,11 +72,12 @@ for i in range(epochs):
                                sample_weight=train_mask,
                                )
 
+    val_loss, val_acc = model.test_on_batch([X, fltr], labels_one_hot, sample_weight=val_mask)
+    history.append([val_loss, val_acc])
+
     if i % 10 == 0:
-        print("iteration:", i, "loss:", loss, "accuracy:", acc)
-        val_loss, val_acc = model.test_on_batch([X, fltr], labels_one_hot, sample_weight=val_mask)
         print("iteration:", i, "val_loss:", val_loss, "val_accuracy:", val_acc)
-        history.append([val_loss, val_acc])
+        print("iteration:", i, "loss:", loss, "accuracy:", acc)
 
     if i % 50 == 0:
         emb = model.get_layer("embedding").get_output_at(0)
