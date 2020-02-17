@@ -79,5 +79,4 @@ fig.savefig("./cr_sphere_dynamic.png")
 
 
 # Draw contribution (class score) of each individual cosmic ray
-utils.draw_signal_contribution(model, test_input_data, test_id=test_id,
-                               opath="./signal_contributions_of_cosmic_ray.png")
+utils.draw_signal_contribution(model, test_input_data, test_id=test_id, path="./signal_contributions_of_cosmic_ray.png")

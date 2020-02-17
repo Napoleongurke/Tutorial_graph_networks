@@ -66,6 +66,7 @@ def plot_eigenvectors(A):
     fig.tight_layout()
     return fig
 
+
 def plot_history(history):
     fig, axes = plt.subplots(2, figsize=(12,8))
     if type(history) == dict:
@@ -89,7 +90,8 @@ def plot_history(history):
     fig.tight_layout()
     return fig
 
-def draw_signal_contribution(model, test_input_data, test_id=0):
+
+def draw_signal_contribution(model, test_input_data, test_id=0, path="./"):
     # Draw Signal Contribution
     coord_mask = [np.sum(np.linalg.norm(inp_d[test_id], axis=-1)) == 500 for inp_d in test_input_data]
     assert True in coord_mask, "For plotting the spherical graph of the cosmic ray on at least one input has to have 3 dimensions XYZ"
@@ -107,6 +109,5 @@ def draw_signal_contribution(model, test_input_data, test_id=0):
     fig, ax = skymap.eventmap(pos.squeeze().T,
                               c=score[:, 1],
                               cblabel="class score",
-                              cmap="YlOrRd")
-    fig.tight_layout()
+                              cmap="YlOrRd", opath=path)
     return fig
