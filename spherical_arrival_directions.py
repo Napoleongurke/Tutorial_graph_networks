@@ -64,9 +64,9 @@ model.compile(loss="binary_crossentropy",
               metrics=['acc'])
 
 history = model.fit(train_input_data,
-          y_train,
-          batch_size=64,
-          epochs=2)
+                    y_train,
+                    batch_size=64,
+                    epochs=2)
 
 
 fig = utils.plot_history(history.history)
@@ -79,5 +79,5 @@ fig.savefig("./cr_sphere_dynamic.png")
 
 
 # Draw contribution (class score) of each individual cosmic ray
-fig = utils.draw_signal_contribution(model, test_input_data, test_id=test_id)
-fig.savefig("./signal_contributions_of_cosmic_ray.png")
+utils.draw_signal_contribution(model, test_input_data, test_id=test_id,
+                               opath="./signal_contributions_of_cosmic_ray.png")
